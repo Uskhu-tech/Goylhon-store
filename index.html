@@ -1,0 +1,501 @@
+<!DOCTYPE html>
+<html lang="mn">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"/>
+  <title>Goylhon.store | Minimal Shop</title>
+  
+  <script src="https://cdn.tailwindcss.com"></script>
+  
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet"/>
+  
+  <style>
+    body { font-family: 'Plus Jakarta Sans', sans-serif; background-color: #faf5f6; }
+    .glass-nav { background: rgba(255, 255, 255, 0.85); backdrop-filter: blur(14px); border-bottom: 1px solid rgba(216, 138, 146, 0.15); }
+    .product-card { transition: all 0.2s ease-in-out; }
+    .product-card:hover { transform: translateY(-3px); }
+    .btn-pink { background-color: #d88a92; }
+    .btn-pink:hover { background-color: #c77981; }
+    .admin-gradient { background: linear-gradient(135deg, #332224 0%, #1f1415 100%); }
+    .cart-anim { animation: bounce 0.4s ease-in-out; }
+    @keyframes bounce { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.15); } }
+    .no-scrollbar::-webkit-scrollbar { display: none; }
+    .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+
+    .hidden { display: none !important; }
+    #admin-panel.hidden, #cart-modal.hidden, #checkout-modal.hidden, #payment-modal.hidden {
+      display: none !important;
+    }
+    #cart-modal, #checkout-modal, #payment-modal {
+      position: fixed;
+      inset: 0;
+      background-color: rgba(30, 20, 22, 0.4);
+      backdrop-filter: blur(4px);
+    }
+  </style>
+</head>
+<body class="text-slate-800 pt-36 md:pt-20">
+
+  <!-- Navigation -->
+  <nav class="glass-nav fixed w-full top-0 z-50">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div class="flex justify-between items-center h-16 md:h-20">
+        <!-- Logo -->
+        <div class="flex-shrink-0 flex items-center gap-2 cursor-pointer" onclick="location.reload()">
+          <div class="flex flex-col">
+            <span class="text-2xl md:text-3xl font-black tracking-wider text-[#d88a92] uppercase">GOYLHON</span>
+            <span class="text-[9px] md:text-[10px] font-bold tracking-widest text-[#c77981] -mt-1 uppercase">STORE</span>
+          </div>
+        </div>
+
+        <!-- Desktop Search -->
+        <div class="flex-1 mx-8 max-w-md hidden md:block">
+          <div class="relative">
+            <input type="text" id="search-input-desktop" placeholder="Бараа хайх..." class="w-full pl-10 pr-4 py-2.5 bg-[#f8ecee]/50 border border-[#d88a92]/20 rounded-2xl focus:ring-2 focus:ring-[#d88a92] focus:bg-white transition-all outline-none text-sm"/>
+            <div class="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-[#d88a92]">
+              <i class="fa fa-search text-sm"></i>
+            </div>
+          </div>
+        </div>
+
+        <!-- Action Buttons -->
+        <div class="flex items-center gap-2 md:gap-4">
+          <button id="admin-toggle-btn" class="text-xs font-bold px-3 py-1.5 rounded-full bg-rose-100 text-[#a0535b] hidden hover:bg-rose-200 transition" onclick="logoutAdmin()">Гарах</button>
+          
+          <button onclick="loginAdmin()" class="w-10 h-10 flex items-center justify-center rounded-full hover:bg-rose-100/50 transition text-[#a0535b]" title="Админ">
+            <i class="fa-regular fa-user text-lg md:text-xl"></i>
+          </button>
+          
+          <button id="cart-nav-btn" class="relative group w-10 h-10 md:w-12 md:h-12 flex items-center justify-center rounded-2xl btn-pink text-white shadow-md shadow-[#d88a92]/20 transition-all duration-300">
+            <i class="fa fa-bag-shopping text-base md:text-lg"></i>
+            <span id="cart-badge" class="absolute -top-1 -right-1 bg-white text-[#d88a92] text-[10px] font-black rounded-full h-5 min-w-[20px] px-1 flex items-center justify-center border-2 border-[#d88a92]">0</span>
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Mobile Search -->
+    <div class="px-4 pb-3 block md:hidden bg-white/80 backdrop-blur">
+      <div class="relative">
+        <input type="text" id="search-input-mobile" placeholder="Бараа хайх..." class="w-full pl-9 pr-4 py-2 bg-[#f8ecee]/50 border border-[#d88a92]/20 rounded-xl focus:ring-2 focus:ring-[#d88a92] transition-all outline-none text-xs"/>
+        <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-[#d88a92]">
+          <i class="fa fa-search text-xs"></i>
+        </div>
+      </div>
+    </div>
+  </nav>
+
+  <!-- Admin Panel -->
+  <section id="admin-panel" class="max-w-7xl mx-auto mt-4 px-4 hidden">
+    <div class="admin-gradient p-5 md:p-8 rounded-3xl shadow-2xl text-white space-y-6 relative overflow-hidden">
+        <div class="relative z-10">
+            <div class="flex items-center gap-3 mb-4">
+                <div class="p-2 bg-white/10 rounded-xl">
+                    <i class="fa fa-lock-open text-xl text-rose-300"></i>
+                </div>
+                <h3 class="text-base md:text-xl font-bold tracking-tight">Админ Dashboard</h3>
+            </div>
+            
+            <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+              <div class="bg-white/5 p-4 md:p-6 rounded-2xl border border-white/10 space-y-4">
+                <h4 class="text-xs font-bold uppercase tracking-wider text-rose-300">1. Ангилал удирдах</h4>
+                <form id="add-category-form" class="flex gap-2">
+                  <input type="text" id="c-name" placeholder="Ангиллын нэр..." required class="flex-1 bg-white/5 border border-white/10 rounded-xl p-2.5 outline-none focus:border-rose-400 transition text-xs md:text-sm">
+                  <button type="submit" class="bg-[#d88a92] hover:bg-[#c77981] px-4 rounded-xl text-sm font-bold"><i class="fa fa-plus"></i></button>
+                </form>
+                <div id="admin-categories-list" class="flex flex-wrap gap-2 pt-2"></div>
+              </div>
+
+              <div class="lg:col-span-2 bg-white/5 p-4 md:p-6 rounded-2xl border border-white/10">
+                <h4 class="text-xs font-bold uppercase tracking-wider text-rose-300 mb-4">2. Шинэ бараа нэмэх</h4>
+                <form id="add-product-form" class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div class="space-y-1">
+                    <label class="text-[10px] font-semibold text-rose-200 uppercase">Барааны нэр</label>
+                    <input type="text" id="p-name" required class="w-full bg-white/5 border border-white/10 rounded-xl p-2.5 outline-none focus:border-rose-400 transition text-xs md:text-sm">
+                  </div>
+                  <div class="space-y-1">
+                    <label class="text-[10px] font-semibold text-rose-200 uppercase">Үнэ (₮)</label>
+                    <input type="number" id="p-price" required class="w-full bg-white/5 border border-white/10 rounded-xl p-2.5 outline-none focus:border-rose-400 transition text-xs md:text-sm">
+                  </div>
+                  <div class="space-y-1">
+                    <label class="text-[10px] font-semibold text-rose-200 uppercase">Ангилал</label>
+                    <select id="p-category" required class="w-full bg-[#1f1415] border border-white/10 rounded-xl p-2.5 outline-none focus:border-rose-400 transition text-xs md:text-sm text-white">
+                    </select>
+                  </div>
+                  <div class="space-y-1">
+                    <label class="text-[10px] font-semibold text-rose-200 uppercase">Сонголт / Хэмжээ</label>
+                    <input type="text" id="p-sizes" class="w-full bg-white/5 border border-white/10 rounded-xl p-2.5 outline-none focus:border-rose-400 transition text-xs md:text-sm" value="Үндсэн, S, M, L">
+                  </div>
+                  <div class="sm:col-span-2 space-y-1">
+                    <label class="text-[10px] font-semibold text-rose-200 uppercase">Барааны зураг</label>
+                    <input type="file" id="p-image-file" accept="image/*" required class="w-full text-xs text-rose-200 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-xs file:font-bold file:bg-[#d88a92] file:text-white hover:file:bg-[#c77981] cursor-pointer">
+                  </div>
+                  <div class="sm:col-span-2 flex justify-end pt-2">
+                    <button type="submit" class="w-full sm:w-auto bg-[#d88a92] hover:bg-[#c77981] text-white font-bold py-2.5 px-6 rounded-xl shadow-lg transition-all text-xs md:text-sm">
+                        <i class="fa fa-check mr-1"></i> Бараа нэмэх
+                    </button>
+                  </div>
+                </form>
+              </div>
+            </div>
+        </div>
+    </div>
+  </section>
+
+  <!-- Banner Header -->
+  <header class="py-3 md:py-6 overflow-hidden">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div class="relative bg-[#f5e1e4] rounded-3xl p-6 md:p-10 flex flex-col md:flex-row items-center justify-between shadow-sm border border-[#d88a92]/20">
+        <div class="flex flex-col items-start max-w-lg">
+          <span class="px-3 py-1 bg-white/80 backdrop-blur text-[#d88a92] rounded-full text-[10px] font-bold uppercase tracking-widest mb-3 shadow-xs">NEW COLLECTION 2026</span>
+          <h1 class="text-2xl md:text-4xl font-extrabold text-slate-900 leading-tight mb-2">
+            Goylhon <span class="text-[#d88a92]">Store</span>
+          </h1>
+          <p class="text-slate-600 text-xs md:text-sm">
+            Танд зориулсан хамгийн сүүлийн үеийн загварлаг бүтээгдэхүүний цуглуулга.
+          </p>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <!-- Categories Filter -->
+  <section class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mb-4 md:mb-6">
+    <div class="flex overflow-x-auto gap-2 border-b border-rose-100 pb-3 no-scrollbar scroll-smooth" id="user-categories-filter"></div>
+  </section>
+
+  <!-- Product Section -->
+  <main class="py-2">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div class="flex items-center justify-between mb-4 md:mb-6">
+        <div>
+            <h2 class="text-base md:text-xl font-bold text-slate-900" id="current-category-title">Бүх бүтээгдэхүүн</h2>
+            <p class="text-slate-400 text-[10px] md:text-xs mt-0.5">Нийт <span id="product-count" class="font-bold text-[#d88a92]">0</span> бараа</p>
+        </div>
+      </div>
+      <div id="products-container" class="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3 md:gap-5"></div>
+    </div>
+  </main>
+
+  <!-- Footer -->
+  <footer class="bg-white border-t border-rose-100/60 py-8 mt-12 text-center text-xs text-slate-400 space-y-1">
+    <p class="font-bold text-[#d88a92]">GOYLHON.STORE</p>
+    <p>&copy; 2026 Бүх эрх хуулиар хамгаалагдсан.</p>
+  </footer>
+
+  <!-- Cart Modal -->
+  <div id="cart-modal" class="fixed inset-0 hidden flex items-center justify-end z-[60]">
+    <div class="bg-white h-full w-full max-w-md shadow-2xl p-6 md:p-8 flex flex-col">
+      <div class="flex justify-between items-center mb-6 pb-4 border-b border-rose-100">
+        <h3 class="text-lg md:text-xl font-bold text-slate-900">Таны сагс</h3>
+        <button id="close-cart-top" class="text-slate-400 hover:text-slate-900"><i class="fa fa-times text-lg"></i></button>
+      </div>
+      <ul id="cart-items" class="flex-1 overflow-y-auto divide-y divide-rose-50"></ul>
+      <div class="mt-6 pt-4 border-t border-rose-100">
+        <div class="flex justify-between items-center font-bold text-lg mb-4">
+            <span class="text-slate-400 text-xs uppercase font-semibold">Нийт:</span>
+            <span id="cart-total" class="text-[#d88a92]">0₮</span>
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+            <button id="close-cart" class="py-2.5 border border-rose-200 rounded-xl text-slate-600 text-xs font-bold hover:bg-rose-50">Хаах</button>
+            <button id="checkout-btn" class="w-full btn-pink py-2.5 rounded-xl text-white text-xs font-bold shadow-sm">Захиалах</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Checkout Modal -->
+  <div id="checkout-modal" class="fixed inset-0 hidden flex items-center justify-center z-[70] p-4">
+    <div class="bg-white rounded-3xl p-6 md:p-8 w-full max-w-md shadow-2xl border border-rose-100">
+      <h3 class="text-lg font-bold mb-4 text-slate-900">Захиалгын мэдээлэл</h3>
+      <form id="checkout-form" class="space-y-3">
+        <input type="text" id="cust-name" placeholder="Таны Нэр" required class="w-full p-3 bg-[#f8ecee]/30 rounded-xl outline-none border border-rose-100 focus:border-[#d88a92] text-xs">
+        <input type="tel" id="cust-phone" placeholder="Утасны дугаар" required class="w-full p-3 bg-[#f8ecee]/30 rounded-xl outline-none border border-rose-100 focus:border-[#d88a92] text-xs">
+        <textarea id="cust-address" required rows="2" class="w-full p-3 bg-[#f8ecee]/30 rounded-xl outline-none border border-rose-100 focus:border-[#d88a92] text-xs" placeholder="Хүргэлтийн хаяг..."></textarea>
+        <div class="flex gap-3 pt-2">
+          <button type="button" id="back-to-cart" class="w-1/3 py-2.5 border border-rose-200 rounded-xl text-slate-600 text-xs font-bold">Буцах</button>
+          <button type="submit" class="w-2/3 btn-pink py-2.5 rounded-xl text-white font-bold text-xs shadow-sm">Илгээх</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Payment Modal -->
+  <div id="payment-modal" class="fixed inset-0 hidden flex items-center justify-center z-[80] p-4">
+    <div class="bg-white rounded-3xl p-6 md:p-8 w-full max-w-sm text-center shadow-2xl border border-rose-100">
+      <div class="w-12 h-12 bg-rose-50 text-[#d88a92] rounded-full flex items-center justify-center mx-auto mb-3 border border-rose-100">
+        <i class="fa fa-check text-xl"></i>
+      </div>
+      <h3 class="text-lg font-bold text-slate-900 mb-1">Захиалга авлаа!</h3>
+      <p class="text-[11px] text-slate-400 mb-4">Доорх дансанд төлбөрөө шилжүүлнэ үү.</p>
+      
+      <div class="mb-5 bg-[#f8ecee]/40 p-4 rounded-2xl text-left text-xs space-y-2 border border-rose-100">
+        <p class="flex justify-between"><span class="text-slate-400">Банк:</span> <strong>ИБАН (890004000)</strong></p>
+        <p class="flex justify-between"><span class="text-slate-400">Данс:</span> <strong class="text-slate-900">460091473</strong></p>
+        <p class="flex justify-between"><span class="text-slate-400">Нэр:</span> <strong>Тэлмүүн Отгонтамир</strong></p>
+        <hr class="border-rose-100">
+        <p class="flex justify-between items-center"><span class="text-slate-400">Дүн:</span> <strong id="pay-amount" class="text-[#d88a92] text-sm font-bold">0₮</strong></p>
+        <p class="flex justify-between"><span class="text-slate-400">Утга:</span> <strong id="pay-invoice" class="text-slate-800">Утасны дугаар</strong></p>
+      </div>
+      
+      <button id="finish-btn" class="w-full py-3 bg-slate-900 text-white rounded-xl font-bold text-xs hover:bg-slate-800 transition">Ойлгосон</button>
+    </div>
+  </div>
+
+  <script>
+    const defaultCategories = ["Бүгд", "Электроникс", "Косметик", "Аксессуар", "Хувцас"];
+    const defaultProducts = [
+      { id: "1", name: "Minimalist Leather Watch", price: 145000, image: "https://images.unsplash.com/photo-1523275335684-37898b6baf30?ixlib=rb-4.0.3&auto=format&fit=crop&w=600&q=80", sizes: ["Үндсэн"], category: "Аксессуар" },
+      { id: "2", name: "Premium Wireless Earbuds", price: 89000, image: "https://images.unsplash.com/photo-1590658268037-6bf12165a8df?ixlib=rb-4.0.3&auto=format&fit=crop&w=600&q=80", sizes: ["White", "Pink"], category: "Электроникс" }
+    ];
+
+    let categories = JSON.parse(localStorage.getItem('shop_categories_minimal_v1')) || defaultCategories;
+    let products = JSON.parse(localStorage.getItem('shop_products_minimal_v1')) || defaultProducts;
+    let cart = [];
+    let selectedCategory = "Бүгд";
+    let searchQuery = "";
+    let isAdmin = sessionStorage.getItem('is_admin_v3') === 'true';
+
+    const productsContainer = document.getElementById('products-container');
+    const productCountEl = document.getElementById('product-count');
+    const currentCategoryTitle = document.getElementById('current-category-title');
+    const adminPanel = document.getElementById('admin-panel');
+    const adminToggleBtn = document.getElementById('admin-toggle-btn');
+    const userCategoriesFilter = document.getElementById('user-categories-filter');
+    const adminCategoriesList = document.getElementById('admin-categories-list');
+    const pCategorySelect = document.getElementById('p-category');
+    const cartBadge = document.getElementById('cart-badge');
+    const cartItemsContainer = document.getElementById('cart-items');
+    const cartTotal = document.getElementById('cart-total');
+    const cartModal = document.getElementById('cart-modal');
+    const checkoutModal = document.getElementById('checkout-modal');
+    const paymentModal = document.getElementById('payment-modal');
+
+    const handleSearch = (e) => {
+      searchQuery = e.target.value.toLowerCase().trim();
+      document.getElementById('search-input-desktop').value = e.target.value;
+      document.getElementById('search-input-mobile').value = e.target.value;
+      renderProducts();
+    };
+    document.getElementById('search-input-desktop').addEventListener('input', handleSearch);
+    document.getElementById('search-input-mobile').addEventListener('input', handleSearch);
+
+    function renderCategories() {
+      userCategoriesFilter.innerHTML = '';
+      categories.forEach(cat => {
+        const btn = document.createElement('button');
+        const isActive = selectedCategory === cat;
+        btn.className = `px-4 py-1.5 rounded-xl text-xs font-semibold transition whitespace-nowrap ${isActive ? 'btn-pink text-white shadow-sm' : 'bg-white border border-rose-100 text-slate-600 hover:bg-rose-50'}`;
+        btn.innerText = cat;
+        btn.onclick = () => { selectedCategory = cat; renderCategories(); renderProducts(); };
+        userCategoriesFilter.appendChild(btn);
+      });
+
+      adminCategoriesList.innerHTML = '';
+      pCategorySelect.innerHTML = '';
+      categories.forEach(cat => {
+        if(cat !== "Бүгд") {
+          const span = document.createElement('span');
+          span.className = "bg-white/10 text-xs px-3 py-1.5 rounded-xl flex items-center gap-2 border border-white/10";
+          span.innerHTML = `${cat} <button type="button" onclick="deleteCategory('${cat}')" class="text-rose-400 hover:text-rose-200"><i class="fa fa-times"></i></button>`;
+          adminCategoriesList.appendChild(span);
+
+          const opt = document.createElement('option');
+          opt.value = cat; opt.innerText = cat;
+          pCategorySelect.appendChild(opt);
+        }
+      });
+      localStorage.setItem('shop_categories_minimal_v1', JSON.stringify(categories));
+    }
+
+    document.getElementById('add-category-form').onsubmit = (e) => {
+      e.preventDefault();
+      const catInput = document.getElementById('c-name');
+      const newCat = catInput.value.trim();
+      if(newCat && !categories.includes(newCat)) {
+        categories.push(newCat);
+        catInput.value = '';
+        renderCategories();
+      }
+    };
+
+    window.deleteCategory = function(catName) {
+      if(confirm(`"${catName}" ангиллыг устгах уу?`)) {
+        categories = categories.filter(c => c !== catName);
+        if(selectedCategory === catName) selectedCategory = "Бүгд";
+        renderCategories();
+        renderProducts();
+      }
+    };
+
+    function renderProducts() {
+      productsContainer.innerHTML = '';
+      
+      const filteredProducts = products.filter(p => {
+        const matchesCategory = selectedCategory === "Бүгд" || p.category === selectedCategory;
+        const matchesSearch = p.name.toLowerCase().includes(searchQuery);
+        return matchesCategory && matchesSearch;
+      });
+
+      currentCategoryTitle.innerText = selectedCategory === "Бүгд" ? "Бүх бүтээгдэхүүн" : selectedCategory;
+      if(searchQuery !== "") { currentCategoryTitle.innerText = `"${searchQuery}" илэрц`; }
+      productCountEl.innerText = filteredProducts.length;
+      
+      filteredProducts.forEach(p => {
+        const card = document.createElement('div');
+        card.className = "product-card bg-white rounded-2xl overflow-hidden border border-rose-100/70 p-2.5 flex flex-col justify-between shadow-xs";
+        const sizeOptions = p.sizes.map(s => `<option value="${s.trim()}">${s.trim()}</option>`).join('');
+
+        card.innerHTML = `
+          <div class="relative overflow-hidden rounded-xl aspect-[4/5] bg-rose-50">
+            ${isAdmin ? `<button onclick="deleteProduct('${p.id}')" class="absolute top-2 right-2 bg-rose-500 text-white w-6 h-6 rounded-lg flex items-center justify-center shadow z-20"><i class="fa fa-trash text-[10px]"></i></button>` : ''}
+            <img src="${p.image}" alt="${p.name}" class="w-full h-full object-cover">
+            <span class="absolute bottom-2 left-2 bg-white/80 backdrop-blur text-slate-700 text-[9px] font-bold px-2 py-0.5 rounded-md">${p.category || 'Бусад'}</span>
+          </div>
+          <div class="pt-2 flex flex-col flex-1">
+            <h3 class="font-semibold text-slate-800 text-xs md:text-sm mb-0.5 truncate">${p.name}</h3>
+            <p class="text-[#d88a92] font-black text-sm mb-2">${p.price.toLocaleString()}₮</p>
+            <div class="mt-auto space-y-2">
+              <div class="flex items-center gap-1">
+                <span class="text-[9px] font-bold text-slate-400">Сонголт:</span>
+                <select id="size-${p.id}" class="flex-1 bg-slate-50 border border-slate-100 rounded-lg p-1 text-[10px] font-medium outline-none">
+                  ${sizeOptions}
+                </select>
+              </div>
+              <button onclick="addToCart('${p.id}')" class="w-full btn-pink text-white font-bold py-2 rounded-xl text-xs active:scale-95 transition">
+                Сагслах
+              </button>
+            </div>
+          </div>
+        `;
+        productsContainer.appendChild(card);
+      });
+      localStorage.setItem('shop_products_minimal_v1', JSON.stringify(products));
+    }
+
+    document.getElementById('add-product-form').onsubmit = (e) => {
+      e.preventDefault();
+      const file = document.getElementById('p-image-file').files[0];
+      const selectedCat = pCategorySelect.value;
+      if (!file) return alert("Зураг сонгоно уу!");
+      if (!selectedCat) return alert("Ангилал сонгоно уу!");
+
+      const reader = new FileReader();
+      reader.onload = (event) => {
+        const newProduct = {
+          id: Date.now().toString(),
+          name: document.getElementById('p-name').value,
+          price: parseInt(document.getElementById('p-price').value),
+          category: selectedCat,
+          image: event.target.result,
+          sizes: document.getElementById('p-sizes').value.split(',')
+        };
+        products.push(newProduct);
+        renderProducts();
+        document.getElementById('add-product-form').reset();
+        alert("Бараа нэмэгдлээ!");
+      };
+      reader.readAsDataURL(file);
+    };
+
+    window.deleteProduct = function(id) {
+      if(confirm("Устгах уу?")) { products = products.filter(p => p.id !== id); renderProducts(); }
+    };
+
+    window.loginAdmin = function() {
+      if(isAdmin) return;
+      if(prompt("Нууц үг:") === "admin123") {
+        isAdmin = true; sessionStorage.setItem('is_admin_v3', 'true');
+        checkAdminStatus(); renderProducts(); renderCategories();
+      } else { alert("Буруу байна."); }
+    };
+
+    window.logoutAdmin = function() {
+      isAdmin = false; sessionStorage.setItem('is_admin_v3', 'false');
+      checkAdminStatus(); renderProducts(); renderCategories();
+    };
+
+    function checkAdminStatus() {
+      if(isAdmin) { adminPanel.classList.remove('hidden'); adminToggleBtn.classList.remove('hidden'); }
+      else { adminPanel.classList.add('hidden'); adminToggleBtn.classList.add('hidden'); }
+    }
+
+    window.addToCart = function(id) {
+      const p = products.find(prod => prod.id === id);
+      const size = document.getElementById(`size-${id}`).value;
+      const exist = cart.find(i => i.id === id && i.size === size);
+      if(exist) exist.quantity += 1;
+      else cart.push({ id, name: p.name, price: p.price, size, quantity: 1 });
+      updateCart();
+      cartBadge.classList.add('cart-anim');
+      setTimeout(() => cartBadge.classList.remove('cart-anim'), 400);
+    };
+
+    function updateCart() {
+      cartItemsContainer.innerHTML = '';
+      let total = 0;
+      cart.forEach(i => {
+        const li = document.createElement('li');
+        li.className = 'flex items-center gap-3 py-3 border-b border-rose-50';
+        li.innerHTML = `
+          <div class="flex-1">
+            <h5 class="font-bold text-xs text-slate-800">${i.name} <span class="text-[9px] px-1.5 py-0.5 bg-rose-50 text-[#d88a92] rounded">${i.size}</span></h5>
+            <p class="text-[10px] text-slate-400 font-medium">${i.price.toLocaleString()}₮ × ${i.quantity}</p>
+          </div>
+          <div class="flex items-center gap-2">
+            <span class="font-bold text-xs text-[#d88a92]">${(i.price * i.quantity).toLocaleString()}₮</span>
+            <button onclick="removeFromCart('${i.id}', '${i.size}')" class="text-slate-300 hover:text-rose-500"><i class="fa fa-trash-can"></i></button>
+          </div>`;
+        cartItemsContainer.appendChild(li);
+        total += i.price * i.quantity;
+      });
+      cartTotal.textContent = total.toLocaleString() + '₮';
+      cartBadge.textContent = cart.reduce((s, i) => s + i.quantity, 0);
+    }
+
+    window.removeFromCart = function(id, size) {
+      cart = cart.filter(i => !(i.id === id && i.size === size));
+      updateCart();
+    };
+
+    document.getElementById('cart-nav-btn').onclick = () => cartModal.classList.remove('hidden');
+    document.getElementById('close-cart').onclick = () => cartModal.classList.add('hidden');
+    document.getElementById('close-cart-top').onclick = () => cartModal.classList.add('hidden');
+    document.getElementById('checkout-btn').onclick = () => { if(cart.length) { cartModal.classList.add('hidden'); checkoutModal.classList.remove('hidden'); } };
+    document.getElementById('back-to-cart').onclick = () => { checkoutModal.classList.add('hidden'); cartModal.classList.remove('hidden'); };
+
+    document.getElementById('checkout-form').onsubmit = (e) => {
+      e.preventDefault();
+      const name = document.getElementById('cust-name').value;
+      const phone = document.getElementById('cust-phone').value;
+      const addr = document.getElementById('cust-address').value;
+      const tot = cart.reduce((s, i) => s + (i.price * i.quantity), 0);
+      const items = cart.map(i => `📦 ${i.name} (${i.size}) x${i.quantity} = ${(i.price * i.quantity).toLocaleString()}₮`).join('\n');
+
+      const msg = `🚨 ШИНЭ ЗАХИАЛГА!\n━━━━━━━━━━━━━\n👤 Нэр: ${name}\n📞 Утас: ${phone}\n📍 Хаяг: ${addr}\n━━━━━━━━━━━━━\n${items}\n━━━━━━━━━━━━━\n💰 НИЙТ: ${tot.toLocaleString()}₮`;
+
+      fetch(`https://api.telegram.org/bot8933567416:AAEK7E6zB5NDGLKlzLaefkHmHL-amI_cYLs/sendMessage`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ chat_id: "7270598165", text: msg })
+      })
+      .then(res => {
+        if(res.ok) {
+          document.getElementById('pay-amount').innerText = tot.toLocaleString() + '₮';
+          document.getElementById('pay-invoice').innerText = phone;
+          checkoutModal.classList.add('hidden'); paymentModal.classList.remove('hidden');
+        }
+      });
+    };
+
+    document.getElementById('finish-btn').onclick = () => { cart = []; updateCart(); document.getElementById('checkout-form').reset(); paymentModal.classList.add('hidden'); };
+
+    checkAdminStatus();
+    renderCategories();
+    renderProducts();
+  </script>
+</body>
+</html>
